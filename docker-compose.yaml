@@ -1,30 +1,30 @@
 version: "3.9"
 
 services:
-
   db:
     image: mysql:8
     container_name: tara-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}   # MySQL root 비밀번호
+      MYSQL_DATABASE: ${DB_NAME}            # 컨테이너 초기화 시 생성할 기본 DB
+      TZ: Asia/Seoul                        # 컨테이너 타임존 설정
     ports:
-      - "3307:3306"
+      - "3307:3306"                         # 로컬 3307 포트를 컨테이너 3306에 매핑
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql           # MySQL 데이터 영속화
+      - ./db/init:/docker-entrypoint-initdb.d  # 초기 실행 시 SQL 자동 실행 디렉토리
     env_file:
-      - .env
+      - .env                                # 환경 변수 파일 로드
 
   api:
     build: .
     container_name: tara-fastapi
     ports:
-      - "8000:8000"
+      - "8000:8000"                         # FastAPI 포트 노출
     depends_on:
-      - db
+      - db                                  # db 컨테이너 선기동 (준비 완료 보장은 아님)
     env_file:
-      - .env
+      - .env                                # API 실행용 환경 변수 로드
 
 volumes:
-  mysql_data:
+  mysql_data:                               # MySQL 영속 볼륨
