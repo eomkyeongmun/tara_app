@@ -6,12 +6,15 @@ services:
     image: mysql:8
     container_name: tara-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: test
-      MYSQL_DATABASE: tara
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    env_file:
+      - .env
 
   api:
     build: .
@@ -20,12 +23,8 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: test
-      DB_NAME: tara
-      OLLAMA_URL: http://host.docker.internal:11434/api/generate
+    env_file:
+      - .env
 
 volumes:
   mysql_data:
