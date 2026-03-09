@@ -1,18 +1,19 @@
-version: "3.9"
+version: "3.9" # docker compose 버전
 
 services:
+
   db:
     image: mysql:8
     container_name: tara-mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}   # MySQL root 비밀번호
-      MYSQL_DATABASE: ${DB_NAME}            # 컨테이너 초기화 시 생성할 기본 DB
-      TZ: Asia/Seoul                        # 컨테이너 타임존 설정
+      MYSQL_DATABASE: ${DB_NAME}            # 컨테이너 시작 시 생성할 기본 DB
+      TZ: Asia/Seoul                        # 컨테이너 타임존
     ports:
-      - "3307:3306"                         # 로컬 3307 포트를 컨테이너 3306에 매핑
+      - "3307:3306"                         # 로컬 3307 → 컨테이너 3306
     volumes:
       - mysql_data:/var/lib/mysql           # MySQL 데이터 영속화
-      - ./db/init:/docker-entrypoint-initdb.d  # 초기 실행 시 SQL 자동 실행 디렉토리
+      - ./db/init:/docker-entrypoint-initdb.d  # 컨테이너 최초 실행 시 SQL 자동 실행
     env_file:
       - .env                                # 환경 변수 파일 로드
 
@@ -20,11 +21,37 @@ services:
     build: .
     container_name: tara-fastapi
     ports:
-      - "8000:8000"                         # FastAPI 포트 노출
+      - "8000:8000"                         # FastAPI API 서버 포트
     depends_on:
-      - db                                  # db 컨테이너 선기동 (준비 완료 보장은 아님)
+      - db                                  # MySQL 먼저 실행
+      - chromadb                            # 벡터DB 먼저 실행
+      - ollama                              # LLM 서버 먼저 실행
     env_file:
-      - .env                                # API 실행용 환경 변수 로드
+      - .env                                # API 실행 환경 변수
+    volumes:
+      - ./:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: tara-chromadb
+    ports:
+      - "8001:8000"
+    environment:
+      IS_PERSISTENT: "TRUE"
+      PERSIST_DIRECTORY: /data
+    volumes:
+      - chroma_data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: tara-ollama
+    ports:
+      - "11434:11434"                       # Ollama API 포트
+    volumes:
+      - ollama_data:/root/.ollama           # 모델 캐시 저장 (컨테이너 삭제해도 유지)
 
 volumes:
-  mysql_data:                               # MySQL 영속 볼륨
+  mysql_data:                               # MySQL 데이터 저장
+  chroma_data:                              # ChromaDB 벡터 저장
+  ollama_data:                              # Ollama 모델 저장
