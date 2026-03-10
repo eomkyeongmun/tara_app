@@ -6,12 +6,12 @@ from app.services.rag_service import RagService
 def main():
     rag_service = RagService()
 
-    question = "TARA의 프로세스를 Item definition 부터 끝까지 설명해줘"
+    question = "TARA의 정의에 대해 설명해줘"
 
     print(f"질문: {question}")
     start = time.time()
 
-    result = rag_service.generate_answer(question, top_k=5)
+    result = rag_service.generate_answer(question)
 
     print("\n=== 검색 질의 ===")
     print(result.get("search_query"))
